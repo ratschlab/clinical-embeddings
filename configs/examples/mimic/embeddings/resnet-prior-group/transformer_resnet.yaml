@@ -1,0 +1,43 @@
+compute:
+  gpus: 2
+  gpu_type: rtx2080ti
+  cores: 4
+  memory: 8
+  time: 8
+
+params:
+
+ Splitted_Embedding.merge: ['attention_cls', 'mean', 'concat']
+
+  # Backbone parameters
+ Transformer.hidden: 64
+ Transformer.ff_hidden_mult: 2
+ Transformer.depth: 1
+ Transformer.heads: 2
+ Transformer.dropout: 0.4
+ Transformer.dropout_att: 0.3
+
+  # Concept Embedding
+ ResNet.depth: [1, 2, 3, 4]
+ ResNet.latent_dim: [8, 16, 32, 64]
+
+  # Concept Aggregation
+ aggregation/StackedTransformerBlocks.depth: [1, 2]
+ aggregation/StackedTransformerBlocks.hidden: [16, 32, 64]
+ aggregation/StackedTransformerBlocks.heads: [1, 2, 3]
+  
+
+  # Reg. params
+ DLWrapper.train.batch_size: 64
+ DLWrapper.reg: 'l1'
+ DLWrapper.reg_weight: [0, 0.0001, 0.001, 0.1, 1.0]
+
+  # Splitting
+ mod_split: ['mimic_nosplit', 'mimic_organ']
+
+# Different random seeds, one training run per seed
+seeds: [1111, 2222, 3333]
+
+base_gin: './configs/examples/mimic/embeddings/resnet-prior-group/transformer.gin' # Base gin file
+accelerate_config: './configs/accelerate/accel_config_gpu2.yml' # Accelerate config file
+task: 'decomp_24Hours' # Task to run
