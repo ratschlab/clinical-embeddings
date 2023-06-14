@@ -34,6 +34,16 @@ git submodule update
 The resulting `.h5` files in the `ml_stage` working directory of the preprocessing are the designated
 inputs to our pipeline.
 
+### Tasks
+
+| Dataset  | Task | Time-Series Length | Shorthand |
+| ------------- | ------------- |------------- |------------- |
+| HiRID  | Circulatory Failure at 12h Horizon | 2016 timepoints, 1 week | `Dynamic_CircFailure_12Hours` |
+| HiRID  | Respiratory Failure at 12h Horizon | 2016 timepoints, 1 week | `Dynamic_RespFailure_12Hours` |
+| HiRID  | Mortality after 24h | 288 timepoints, 24 hours | `Dynamic_CircFailure_12Hours` |
+| MIMIC-III  | Decompensation in next 24h | full time-series | `decomp_24Hours` |
+| MIMIC-III  | In-Hospital Mortality after 48h | 48 timepoints, 48 hours | `ihm` |
+
 ### Auxiliary Files
 
 In the folder: `./files/cat_dicts/` we provide the auxiliary files for the MIMIC-III and HiRID datasets, which are used to map the categorical variables to their respective indices. They are
