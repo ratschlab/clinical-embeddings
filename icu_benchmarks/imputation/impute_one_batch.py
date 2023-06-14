@@ -7,14 +7,14 @@ import os.path
 import numpy as np
 import pandas as pd
 
-from icu_benchmarks.common.constants import PID, DATETIME, REL_DATETIME, MAX_IMPUTE_DAYS, IMPUTATION_PERIOD_SEC,\
-    VAR_IDS_EP
 import icu_benchmarks.imputation.forward_filling as endpoint_ff
-
+from icu_benchmarks.common.constants import (DATETIME, IMPUTATION_PERIOD_SEC,
+                                             MAX_IMPUTE_DAYS, PID,
+                                             REL_DATETIME, VAR_IDS_EP)
 
 
 def value_empty(size, default_val, dtype=None):
-    """ Returns a vector filled with elements of a specific value"""
+    """Returns a vector filled with elements of a specific value"""
 
     if dtype is not None:
         tmp_arr = np.empty(size, dtype=dtype)
@@ -26,17 +26,17 @@ def value_empty(size, default_val, dtype=None):
 
 
 def empty_nan(sz):
-    """ Returns an empty NAN vector of specified size"""
+    """Returns an empty NAN vector of specified size"""
     arr = np.empty(sz)
     arr[:] = np.nan
     return arr
 
 
 def impute_dynamic_df(patient_df, pid=None):
-    """ Transformer method, taking as input a data-frame with irregularly sampled input data. The method
-        assumes that the data-frame contains a time-stamp column, and the data-frame is sorted along the first
-        axis in non-decreasing order with respect to the timestamp column. Pass the <pid> of the patient stay
-        as additional information"""
+    """Transformer method, taking as input a data-frame with irregularly sampled input data. The method
+    assumes that the data-frame contains a time-stamp column, and the data-frame is sorted along the first
+    axis in non-decreasing order with respect to the timestamp column. Pass the <pid> of the patient stay
+    as additional information"""
     max_grid_length_secs = MAX_IMPUTE_DAYS * 24 * 3600
     # Set non-observed value to NAN
     global_impute_val = np.nan
@@ -44,11 +44,18 @@ def impute_dynamic_df(patient_df, pid=None):
     # If either the endpoints or the features don't exist, log the failure but do nothing, the missing patients can be
     # latter added as a new group to the output H5
     if patient_df.shape[0] == 0:
-        logging.info("WARNING: p{} has missing features, skipping output generation...".format(pid))
+        logging.info(
+            "WARNING: p{} has missing features, skipping output generation...".format(
+                pid
+            )
+        )
         return None
 
-    all_keys = list(set(patient_df.columns.values.tolist()).difference(
-        set([DATETIME, PID, "a_temp", "m_pm_1", "m_pm_2"])))
+    all_keys = list(
+        set(patient_df.columns.values.tolist()).difference(
+            set([DATETIME, PID, "a_temp", "m_pm_1", "m_pm_2"])
+        )
+    )
 
     ts = patient_df[DATETIME]
     ts_arr = np.array(ts)
@@ -65,9 +72,15 @@ def impute_dynamic_df(patient_df, pid=None):
     ts_min = ts_arr[np.isfinite(hr)][0]
     ts_max = ts_arr[np.isfinite(hr)][-1]
 
-    max_ts_diff = (ts_max - ts_min) / np.timedelta64(1, 's')
-    time_grid = np.arange(0.0, min(max_ts_diff + IMPUTATION_PERIOD_SEC, max_grid_length_secs), IMPUTATION_PERIOD_SEC)
-    time_grid_abs = [ts_min + pd.Timedelta(seconds=time_grid[idx]) for idx in range(time_grid.size)]
+    max_ts_diff = (ts_max - ts_min) / np.timedelta64(1, "s")
+    time_grid = np.arange(
+        0.0,
+        min(max_ts_diff + IMPUTATION_PERIOD_SEC, max_grid_length_secs),
+        IMPUTATION_PERIOD_SEC,
+    )
+    time_grid_abs = [
+        ts_min + pd.Timedelta(seconds=time_grid[idx]) for idx in range(time_grid.size)
+    ]
     imputed_df_dict = {}
     imputed_df_dict[PID] = [int(pid)] * time_grid.size
     imputed_df_dict[REL_DATETIME] = time_grid
@@ -75,7 +88,11 @@ def impute_dynamic_df(patient_df, pid=None):
 
     # There is nothing to do if the patient has no records, just return...
     if n_ts == 0:
-        logging.info("WARNING: p{} has an empty record, skipping output generation...".format(pid))
+        logging.info(
+            "WARNING: p{} has an empty record, skipping output generation...".format(
+                pid
+            )
+        )
         return None
 
     # Initialize the storage for the imputed time grid, NANs for the non-pharma, 0 for pharma.
@@ -86,10 +103,10 @@ def impute_dynamic_df(patient_df, pid=None):
             imputed_df_dict[col] = empty_nan(time_grid.size)
         else:
             logging.info("ERROR: Invalid variable type")
-            assert (False)
+            assert False
 
     imputed_df = pd.DataFrame(imputed_df_dict)
-    norm_ts = np.array(ts - ts_min) / np.timedelta64(1, 's')
+    norm_ts = np.array(ts - ts_min) / np.timedelta64(1, "s")
     weight_id = VAR_IDS_EP["Weight"][0]
     all_keys.remove(weight_id)
     all_keys = [weight_id] + all_keys
@@ -99,10 +116,10 @@ def impute_dynamic_df(patient_df, pid=None):
     # its time-gridded information can later be used by other custom formulae imputations that depend on it.
     for var_idx, variable in enumerate(all_keys):
         df_var = patient_df[variable]
-        assert (n_ts == df_var.shape[0] == norm_ts.size)
+        assert n_ts == df_var.shape[0] == norm_ts.size
 
         raw_col = np.array(df_var)
-        assert (raw_col.size == norm_ts.size)
+        assert raw_col.size == norm_ts.size
 
         observ_idx = np.isfinite(raw_col)
         observ_ts = norm_ts[observ_idx]
@@ -112,16 +129,24 @@ def impute_dynamic_df(patient_df, pid=None):
         if observ_val.size == 0:
             est_vals = value_empty(time_grid.size, global_impute_val)
             imputed_df[variable] = est_vals
-            imputed_df["{}_IMPUTED_STATUS_CUM_COUNT".format(variable)] = np.zeros(time_grid.size)
-            imputed_df["{}_IMPUTED_STATUS_TIME_TO".format(variable)] = value_empty(time_grid.size, -1.0)
+            imputed_df["{}_IMPUTED_STATUS_CUM_COUNT".format(variable)] = np.zeros(
+                time_grid.size
+            )
+            imputed_df["{}_IMPUTED_STATUS_TIME_TO".format(variable)] = value_empty(
+                time_grid.size, -1.0
+            )
             continue
 
-        assert (np.isfinite(observ_val).all())
-        assert (np.isfinite(observ_ts).all())
+        assert np.isfinite(observ_val).all()
+        assert np.isfinite(observ_ts).all()
 
-        est_vals, cum_count_ts, time_to_last_ms = endpoint_ff.impute_forward_fill_simple(observ_ts, observ_val,
-                                                                                         time_grid,
-                                                                                         global_impute_val)
+        (
+            est_vals,
+            cum_count_ts,
+            time_to_last_ms,
+        ) = endpoint_ff.impute_forward_fill_simple(
+            observ_ts, observ_val, time_grid, global_impute_val
+        )
         imputed_df[variable] = est_vals
         imputed_df["{}_IMPUTED_STATUS_CUM_COUNT".format(variable)] = cum_count_ts
         imputed_df["{}_IMPUTED_STATUS_TIME_TO".format(variable)] = time_to_last_ms
@@ -133,11 +158,13 @@ def is_df_sorted(df, colname):
 
 
 def execute(batch_id, merged_path, imputed_path):
-    """ Batch wrapper that loops through the patients of one the 250 batches"""
+    """Batch wrapper that loops through the patients of one the 250 batches"""
 
     n_skipped_patients = 0
-    cand_files = glob.glob(os.path.join(merged_path, "part-{}.parquet".format(batch_id)))
-    assert (len(cand_files) == 1)
+    cand_files = glob.glob(
+        os.path.join(merged_path, "part-{}.parquet".format(batch_id))
+    )
+    assert len(cand_files) == 1
     source_fpath = cand_files[0]
     no_patient_output = 0
     output_dfs = []
@@ -167,7 +194,9 @@ def execute(batch_id, merged_path, imputed_path):
         gc.collect()
 
         if (pidx + 1) % 100 == 0:
-            logging.info("Batch {}: {:.2f} %".format(batch_id, (pidx + 1) / len(all_pids) * 100))
+            logging.info(
+                "Batch {}: {:.2f} %".format(batch_id, (pidx + 1) / len(all_pids) * 100)
+            )
             logging.info("Number of skipped patients: {}".format(n_skipped_patients))
             logging.info("Number of no patients output: {}".format(no_patient_output))
 

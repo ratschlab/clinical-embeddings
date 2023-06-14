@@ -11,6 +11,7 @@ class Dataset:
 
     A dataset constisting of parts is marked as complete/done using an empty file called "_SUCCESS"
     """
+
     def __init__(self, path, part_re=re.compile("part-([0-9]+).*"), force=True):
         self.path = Path(path)
         self.part_re = part_re
@@ -44,8 +45,12 @@ class Dataset:
         if not self.path.is_dir():
             return [self.path]
 
-        parts = [f for f in self.path.iterdir() if f.is_file() and self.part_re.match(f.name)]
+        parts = [
+            f for f in self.path.iterdir() if f.is_file() and self.part_re.match(f.name)
+        ]
 
-        parts_sorted = sorted(parts, key=lambda f: int(self.part_re.match(f.name).groups()[0]))
+        parts_sorted = sorted(
+            parts, key=lambda f: int(self.part_re.match(f.name).groups()[0])
+        )
 
         return parts_sorted

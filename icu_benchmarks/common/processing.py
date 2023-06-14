@@ -8,8 +8,9 @@ import tqdm
 from icu_benchmarks.common import constants
 
 
-def map_and_combine_patient_dfs(map_pat_fns, part_lists, reading_fns, combine_fn, writing_fn, workers) -> None:
-
+def map_and_combine_patient_dfs(
+    map_pat_fns, part_lists, reading_fns, combine_fn, writing_fn, workers
+) -> None:
     def _process_parts(paths_same_part: Sequence[Path]):
         assert len(paths_same_part) == len(reading_fns) == len(map_pat_fns)
 
@@ -18,7 +19,9 @@ def map_and_combine_patient_dfs(map_pat_fns, part_lists, reading_fns, combine_fn
         for (path, read_fn, map_fn) in zip(paths_same_part, reading_fns, map_pat_fns):
             df = read_fn(path)
 
-            df_mapped = {pid: map_fn(df_pat) for (pid, df_pat) in df.groupby(constants.PID)}
+            df_mapped = {
+                pid: map_fn(df_pat) for (pid, df_pat) in df.groupby(constants.PID)
+            }
             dfs_mapped.append(df_mapped)
 
         df_ret = combine_fn(dfs_mapped)
@@ -29,11 +32,13 @@ def map_and_combine_patient_dfs(map_pat_fns, part_lists, reading_fns, combine_fn
 
 
 def map_patient_df(map_pat_fn, part_list, reading_fn, writing_fn, workers) -> None:
-    map_df(lambda df: df.groupby(constants.PID).apply(map_pat_fn),
-           part_list,
-           reading_fn,
-           writing_fn,
-           workers)
+    map_df(
+        lambda df: df.groupby(constants.PID).apply(map_pat_fn),
+        part_list,
+        reading_fn,
+        writing_fn,
+        workers,
+    )
 
 
 def map_df(map_fn, part_list, reading_fn, writing_fn, workers) -> None:
@@ -55,7 +60,10 @@ def map_reduce_patient_df(map_pat_fn, part_list, reading_fn, reduce_fn, workers)
     def _process_part(path: Path):
         df = reading_fn(path)
 
-        return reduce_fn(map_pat_fn(df_pat) for (_, df_pat) in df.groupby(constants.PID))
+        return reduce_fn(
+            map_pat_fn(df_pat) for (_, df_pat) in df.groupby(constants.PID)
+        )
+
     return exec_parallel_on_parts(_process_part, part_list, workers)
 
 

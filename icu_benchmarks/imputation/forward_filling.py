@@ -2,7 +2,7 @@ import numpy as np
 
 
 def value_empty(size, default_val, dtype=None):
-    """ Returns a vector filled with elements of a specific value"""
+    """Returns a vector filled with elements of a specific value"""
 
     if dtype is not None:
         tmp_arr = np.empty(size, dtype=dtype)
@@ -14,7 +14,7 @@ def value_empty(size, default_val, dtype=None):
 
 
 def empty_nan(sz):
-    """ Returns an empty NAN vector of specified size"""
+    """Returns an empty NAN vector of specified size"""
     arr = np.empty(sz)
     arr[:] = np.nan
     return arr
@@ -23,7 +23,9 @@ def empty_nan(sz):
 """ ONLY FORWARD FILLING imputation schema"""
 
 
-def impute_forward_fill_simple(raw_ts, raw_values, timegrid_pred, global_mean, fill_interval_secs=np.inf):
+def impute_forward_fill_simple(
+    raw_ts, raw_values, timegrid_pred, global_mean, fill_interval_secs=np.inf
+):
     """
     Simple forward filling algorithm used in the respiratory failure endpoints
     """
@@ -54,7 +56,7 @@ def impute_forward_fill_simple(raw_ts, raw_values, timegrid_pred, global_mean, f
         else:
             real_offset = ts - raw_ts[last_real_ms]
 
-        assert (ext_offset >= 0)
+        assert ext_offset >= 0
 
         # Fill with normal value after forward filling horizon
         if ext_offset > fill_interval_secs:
@@ -63,7 +65,7 @@ def impute_forward_fill_simple(raw_ts, raw_values, timegrid_pred, global_mean, f
 
             # Handle the special case where the same variable was observed at the exact time stamp in two tables
             if input_ts > 1 and raw_ts[input_ts - 1] == raw_ts[input_ts - 2]:
-                gen_val = np.mean(raw_values[input_ts - 2:input_ts])
+                gen_val = np.mean(raw_values[input_ts - 2 : input_ts])
                 pred_values[idx[0]] = gen_val
             else:
                 gen_val = raw_values[input_ts - 1]

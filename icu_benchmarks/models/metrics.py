@@ -1,15 +1,14 @@
-import torch
-from typing import Callable, cast, Tuple
-import numpy as np
 import logging
 from collections import Counter
+from typing import Callable, Tuple, cast
 
+import accelerate.utils as accutils
 import ignite.distributed as idist
+import numpy as np
+import torch
+from ignite.exceptions import NotComputableError
 from ignite.metrics import EpochMetric
 from ignite.metrics.metric import Metric, reinit__is_reduced
-from ignite.exceptions import NotComputableError
-import accelerate.utils as accutils
-
 
 
 class AccelerateEpochMetric(EpochMetric):
@@ -21,18 +20,27 @@ class AccelerateEpochMetric(EpochMetric):
         https://github.com/pytorch/ignite/blob/5d8d6bf4af59943da7e6373315000b515263c8c1/ignite/metrics/epoch_metric.py
     """
 
+    def __init__(
+        self,
+        *args,
+        allow_distributed: bool = True,
+        gather_on_gpu: bool = True,
+        **kwargs,
+    ) -> None:
 
-    def __init__(self, *args, allow_distributed: bool = True, gather_on_gpu: bool = True, **kwargs) -> None:
-        
         self.pad_index = -2
         self.allow_distributed = allow_distributed
         self.gather_on_gpu = gather_on_gpu and self.allow_distributed
         self.ws = idist.get_world_size()
-        logging.info(f"[{self.__class__.__name__}] distributed {self.ws}: {self.allow_distributed}, gather on gpu: {self.gather_on_gpu}")
+        logging.info(
+            f"[{self.__class__.__name__}] distributed {self.ws}: {self.allow_distributed}, gather on gpu: {self.gather_on_gpu}"
+        )
         if not self.allow_distributed:
             logging.info(f"[{self.__class__.__name__}] without distributed `compute`")
 
-        assert "accelerator" in kwargs, f"{self.__class__.__name__} requires accelerator to be passed"
+        assert (
+            "accelerator" in kwargs
+        ), f"{self.__class__.__name__} requires accelerator to be passed"
         self.accelerator = kwargs["accelerator"]
         del kwargs["accelerator"]
 
@@ -66,17 +74,18 @@ class AccelerateEpochMetric(EpochMetric):
     #         except Exception as e:
     #             logging.warning(f"Probably, there can be a problem with `compute_fn`:\n {e}.")
 
-
     def compute(self) -> float:
         if len(self._predictions) < 1 or len(self._targets) < 1:
-            raise NotComputableError("EpochMetric must have at least one example before it can be computed.")
+            raise NotComputableError(
+                "EpochMetric must have at least one example before it can be computed."
+            )
 
         if self._result is None:
 
             _prediction_tensor = torch.cat(self._predictions, dim=0)
             _target_tensor = torch.cat(self._targets, dim=0)
 
-            # ws = idist.get_world_size()        
+            # ws = idist.get_world_size()
             if self.ws > 1 and self.allow_distributed:
 
                 # All gather across all processes
@@ -88,20 +97,35 @@ class AccelerateEpochMetric(EpochMetric):
                     # logging.info(f"[{self.accelerator.process_index}] labels: {Counter([tensor.item() for tensor in _target_tensor])}")
                     # logging.info(f"[{self.accelerator.process_index}] index: {torch.arange(len(_target_tensor))[_target_tensor == -1]}")
 
-                    _target_tensor = self.accelerator.pad_across_processes(_target_tensor.to(self.accelerator.device), pad_index=self.pad_index)
-                    _prediction_tensor = self.accelerator.pad_across_processes(_prediction_tensor.to(self.accelerator.device), pad_index=self.pad_index)
+                    _target_tensor = self.accelerator.pad_across_processes(
+                        _target_tensor.to(self.accelerator.device),
+                        pad_index=self.pad_index,
+                    )
+                    _prediction_tensor = self.accelerator.pad_across_processes(
+                        _prediction_tensor.to(self.accelerator.device),
+                        pad_index=self.pad_index,
+                    )
 
-                    recv_msg = self.accelerator.gather((_prediction_tensor, _target_tensor))
-                    _prediction_tensor, _target_tensor = tuple(tens.cpu() for tens in recv_msg)
+                    recv_msg = self.accelerator.gather(
+                        (_prediction_tensor, _target_tensor)
+                    )
+                    _prediction_tensor, _target_tensor = tuple(
+                        tens.cpu() for tens in recv_msg
+                    )
 
-                    _prediction_tensor = _prediction_tensor[_target_tensor != self.pad_index]
+                    _prediction_tensor = _prediction_tensor[
+                        _target_tensor != self.pad_index
+                    ]
                     _target_tensor = _target_tensor[_target_tensor != self.pad_index]
 
                 else:
 
-                    _prediction_tensor = cast(torch.Tensor, idist.all_gather(_prediction_tensor))
-                    _target_tensor = cast(torch.Tensor, idist.all_gather(_target_tensor))
-
+                    _prediction_tensor = cast(
+                        torch.Tensor, idist.all_gather(_prediction_tensor)
+                    )
+                    _target_tensor = cast(
+                        torch.Tensor, idist.all_gather(_target_tensor)
+                    )
 
             self._result = 0.0
             # if idist.get_rank() == 0:
@@ -115,15 +139,15 @@ class AccelerateEpochMetric(EpochMetric):
             if self.ws > 1 and self.allow_distributed:
                 # broadcast result to all processes
                 if self.gather_on_gpu:
-                    result_msg = torch.tensor(self._result, dtype=torch.float64).to(self.accelerator.device)
+                    result_msg = torch.tensor(self._result, dtype=torch.float64).to(
+                        self.accelerator.device
+                    )
                     self._result = float(accutils.broadcast(result_msg, from_process=0))
                     # logging.info(f"[{self.accelerator.process_index}] result {self._result:.2f}")
                 else:
                     self._result = cast(float, idist.broadcast(self._result, src=0))
 
         return self._result
-    
-
 
 
 def accuracy(output, target, topk=(1,)):
@@ -143,7 +167,9 @@ def accuracy(output, target, topk=(1,)):
         return res
 
 
-def balanced_accuracy_compute_fn(y_preds: torch.Tensor, y_targets: torch.Tensor) -> float:
+def balanced_accuracy_compute_fn(
+    y_preds: torch.Tensor, y_targets: torch.Tensor
+) -> float:
     try:
         from sklearn.metrics import balanced_accuracy_score
     except ImportError:
@@ -153,7 +179,10 @@ def balanced_accuracy_compute_fn(y_preds: torch.Tensor, y_targets: torch.Tensor)
     y_pred = np.argmax(y_preds.numpy(), axis=-1)
     return balanced_accuracy_score(y_true, y_pred)
 
-def average_precision_compute_fn(y_preds: torch.Tensor, y_targets: torch.Tensor) -> float:
+
+def average_precision_compute_fn(
+    y_preds: torch.Tensor, y_targets: torch.Tensor
+) -> float:
     try:
         from sklearn.metrics import average_precision_score
     except ImportError:
@@ -178,13 +207,14 @@ def roc_auc_compute_fn(y_preds: torch.Tensor, y_targets: torch.Tensor) -> float:
 
     y_true = y_targets.numpy().astype(np.int32)
     y_pred = y_preds.numpy()
-    
+
     try:
         return roc_auc_score(y_true, y_pred)
     except ValueError as e:
         logging.error(e)
         logging.error(f"y_true: {np.unique(y_true)}, {y_true.shape}")
         logging.error(f"Counter: {Counter(y_true)}")
+
 
 def ece_curve_compute_fn(y_preds: torch.Tensor, y_targets: torch.Tensor) -> float:
     try:
@@ -197,7 +227,9 @@ def ece_curve_compute_fn(y_preds: torch.Tensor, y_targets: torch.Tensor) -> floa
     return calibration_curve(y_true, y_pred, n_bins=10)
 
 
-def mae_with_invert_compute_fn(y_preds: torch.Tensor, y_targets: torch.Tensor, invert_fn=Callable) -> float:
+def mae_with_invert_compute_fn(
+    y_preds: torch.Tensor, y_targets: torch.Tensor, invert_fn=Callable
+) -> float:
     try:
         from sklearn.metrics import mean_absolute_error
     except ImportError:
@@ -209,37 +241,66 @@ def mae_with_invert_compute_fn(y_preds: torch.Tensor, y_targets: torch.Tensor, i
 
 
 class BalancedAccuracy(EpochMetric):
-    def __init__(self, output_transform: Callable = lambda x: x, check_compute_fn: bool = False) -> None:
+    def __init__(
+        self, output_transform: Callable = lambda x: x, check_compute_fn: bool = False
+    ) -> None:
         super(BalancedAccuracy, self).__init__(
-            balanced_accuracy_compute_fn, output_transform=output_transform, check_compute_fn=check_compute_fn
+            balanced_accuracy_compute_fn,
+            output_transform=output_transform,
+            check_compute_fn=check_compute_fn,
         )
+
 
 class CustomAveragePrecision(AccelerateEpochMetric):
-    def __init__(self, output_transform: Callable = lambda x: x, check_compute_fn: bool = False, **kwargs) -> None:
+    def __init__(
+        self,
+        output_transform: Callable = lambda x: x,
+        check_compute_fn: bool = False,
+        **kwargs,
+    ) -> None:
         super(CustomAveragePrecision, self).__init__(
-            average_precision_compute_fn, output_transform=output_transform,
-            check_compute_fn=check_compute_fn, **kwargs
+            average_precision_compute_fn,
+            output_transform=output_transform,
+            check_compute_fn=check_compute_fn,
+            **kwargs,
         )
+
 
 class CustomROCAUC(AccelerateEpochMetric):
-    def __init__(self, output_transform: Callable = lambda x: x, check_compute_fn: bool = False, **kwargs) -> None:
+    def __init__(
+        self,
+        output_transform: Callable = lambda x: x,
+        check_compute_fn: bool = False,
+        **kwargs,
+    ) -> None:
         super(CustomROCAUC, self).__init__(
-            roc_auc_compute_fn, output_transform=output_transform,
-            check_compute_fn=check_compute_fn, **kwargs
+            roc_auc_compute_fn,
+            output_transform=output_transform,
+            check_compute_fn=check_compute_fn,
+            **kwargs,
         )
-    
+
 
 class CalibrationCurve(EpochMetric):
-    def __init__(self, output_transform: Callable = lambda x: x, check_compute_fn: bool = False) -> None:
+    def __init__(
+        self, output_transform: Callable = lambda x: x, check_compute_fn: bool = False
+    ) -> None:
         super(CalibrationCurve, self).__init__(
-            ece_curve_compute_fn, output_transform=output_transform, check_compute_fn=check_compute_fn
+            ece_curve_compute_fn,
+            output_transform=output_transform,
+            check_compute_fn=check_compute_fn,
         )
 
 
 class MAE(EpochMetric):
-    def __init__(self, output_transform: Callable = lambda x: x, check_compute_fn: bool = False,
-                 invert_transform: Callable = lambda x: x) -> None:
+    def __init__(
+        self,
+        output_transform: Callable = lambda x: x,
+        check_compute_fn: bool = False,
+        invert_transform: Callable = lambda x: x,
+    ) -> None:
         super(MAE, self).__init__(
-            lambda x, y: mae_with_invert_compute_fn(x, y, invert_transform), output_transform=output_transform,
-            check_compute_fn=check_compute_fn
+            lambda x, y: mae_with_invert_compute_fn(x, y, invert_transform),
+            output_transform=output_transform,
+            check_compute_fn=check_compute_fn,
         )

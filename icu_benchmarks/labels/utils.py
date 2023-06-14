@@ -1,5 +1,6 @@
 import numpy as np
-from icu_benchmarks.common.constants import STEPS_PER_HOUR, BINARY_TSH_URINE
+
+from icu_benchmarks.common.constants import BINARY_TSH_URINE, STEPS_PER_HOUR
 
 
 def get_hr_status(hr_col):
@@ -11,7 +12,7 @@ def get_hr_status(hr_col):
 
     hr_status_arr = np.zeros_like(hr_col)
     for jdx in range(hr_col.size):
-        subarr = hr_col[max(0, jdx - 2):min(hr_col.size - 1, jdx + 2)]
+        subarr = hr_col[max(0, jdx - 2) : min(hr_col.size - 1, jdx + 2)]
         three_steps_hr_diff = subarr[-1] - subarr[0]
         hr_status_arr[jdx] = 1 if three_steps_hr_diff > 0 else 0
 
@@ -31,14 +32,14 @@ def get_any_resp_label(pre_resp_arr):
 
 
 def convolve_hr(in_arr, hr_status_arr):
-    """ Convolve an array with a HR status arr"""
+    """Convolve an array with a HR status arr"""
     out_arr = np.copy(in_arr)
     out_arr[hr_status_arr == 0] = np.nan
     return out_arr
 
 
 def transition_to_abs(score_arr, target, lhours, rhours):
-    """ Transition to an absolute value from a value below the target"""
+    """Transition to an absolute value from a value below the target"""
     out_arr = np.zeros_like(score_arr)
     for jdx in range(out_arr.size):
         if score_arr[jdx] >= target:
@@ -55,7 +56,7 @@ def transition_to_abs(score_arr, target, lhours, rhours):
 
 
 def unique_label_at_hours(stay_length, status, at_hours=24):
-    """ Unique Label assigned at a fixed time-point"""
+    """Unique Label assigned at a fixed time-point"""
     out_arr = np.zeros(stay_length)
     out_arr[:] = np.nan
     if stay_length >= at_hours * STEPS_PER_HOUR:
@@ -64,7 +65,7 @@ def unique_label_at_hours(stay_length, status, at_hours=24):
 
 
 def transition_to_failure(ann_col, lhours=None, rhours=None):
-    """ Transition to failure defined on a binary annotation column"""
+    """Transition to failure defined on a binary annotation column"""
     out_arr = np.zeros_like(ann_col)
     for jdx in range(len(out_arr)):
         if np.isnan(ann_col[jdx]) or ann_col[jdx] == 1:
@@ -79,7 +80,7 @@ def transition_to_failure(ann_col, lhours=None, rhours=None):
 
 
 def future_urine_output(urine_col, urine_meas_arr, weight_col, rhours=None):
-    """ Regression and binary classification problems on urine output in the future"""
+    """Regression and binary classification problems on urine output in the future"""
     reg_out_arr = np.zeros_like(urine_col)
     binary_out_arr = np.zeros_like(urine_col)
 
@@ -89,7 +90,9 @@ def future_urine_output(urine_col, urine_meas_arr, weight_col, rhours=None):
         measurement_idx = min(jdx + STEPS_PER_HOUR * rhours, urine_col.size - 1)
 
         end_of_stay_before_2h = measurement_idx == urine_col.size - 1
-        urine_diff = urine_meas_arr[measurement_idx] - urine_meas_arr[measurement_idx - 1]
+        urine_diff = (
+            urine_meas_arr[measurement_idx] - urine_meas_arr[measurement_idx - 1]
+        )
         no_measurement_in_2h = urine_diff <= 0
 
         if end_of_stay_before_2h or no_measurement_in_2h:
