@@ -6,27 +6,32 @@ import icu_benchmarks.data.loader
 
 
 EMB = 231
-LR = 3e-4
-HIDDEN = 231
-HEADS = 1
+HIDDEN = 128
+HEADS = 2
 LATENT = 2
 NUM_CLASSES = 2
-DEPTH = 1
-EMB_DEPTH = 1
+DEPTH = 2
 DO = 0.1
 DO_ATT = 0.1
 
-BS = 16
+LR = 3e-4
+BS = 16 # 16
 EPOCHS = 1000
+TASK = 'Mortality_At24Hours' # Mortality_At24Hours, Dynamic_CircFailure_12Hours, Dynamic_RespFailure_12Hours
 
-TASK = 'Dynamic_CircFailure_12Hours' # Mortality_At24Hours, Dynamic_CircFailure_12Hours, Dynamic_RespFailure_12Hours
+EMB_LATENT = 64
+EMB_DEPTH = 2
+
 RES = 1
 RES_LAB = 1
-MAXLEN = 2016  # we cut the time-series at one week (HiRID Benchmark, Yèche et al.)
-
+MAXLEN = 288 # 12 (time points per hour on 5min grid) * 24 hours
 LOSS_WEIGHT = None
-REG_WEIGHT = 0.0
-REG_TYPE = None
+
+# Regularization for the embedding model
+# Helpful in the case of:
+#    single layer (linear) MLP, non-linear multi-layer MLP, and ResNets
+REG_WEIGHT = 1.0
+REG_TYPE = 'l1'
 
 # Train params
 train_common.model = @DLWrapper()
@@ -52,11 +57,13 @@ ICUVariableLengthLoaderTables.data_resampling = %RES
 ICUVariableLengthLoaderTables.label_resampling = %RES_LAB
 ICUVariableLengthDataset.maxlen = %MAXLEN
 
-
 # Optimizer params
 Adam.lr = %LR
 Adam.weight_decay = 1e-6
 
+# -----------------------------------
+# Time-Series Model
+# -----------------------------------
 # Encoder params
 Transformer.emb = %EMB
 Transformer.hidden = %HIDDEN
@@ -66,7 +73,10 @@ Transformer.depth = %DEPTH
 Transformer.num_classes = %NUM_CLASSES
 Transformer.dropout = %DO
 Transformer.dropout_att = %DO_ATT
-Transformer.embedding_layer = @Identity
+Transformer.embedding_layer = @MLP
+
+# -----------------------------------
+# Feature Interaction Model
+# -----------------------------------
 MLP.depth = %EMB_DEPTH
-
-
+MLP.latent_dim = %EMB_LATENT

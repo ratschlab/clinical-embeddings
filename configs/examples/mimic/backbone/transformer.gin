@@ -20,7 +20,7 @@ EPOCHS = 1000
 TASK = 'decomp_24Hours' # decomp_24Hours, ihm
 RES = 1
 RES_LAB = 1
-MAXLEN = 2016
+MAXLEN = -1
 LOSS_WEIGHT = None
 REG_WEIGHT = 0.0
 REG_TYPE = None
@@ -47,7 +47,7 @@ DLWrapper.train.min_delta = 1e-4
 DLWrapper.reg = %REG_TYPE
 DLWrapper.reg_weight = %REG_WEIGHT
 
-ICUVariableLengthLoaderTables.on_RAM = False
+ICUVariableLengthLoaderTables.on_RAM = True
 ICUVariableLengthLoaderTables.splits = ['train','test','val']
 ICUVariableLengthLoaderTables.task = %TASK
 ICUVariableLengthLoaderTables.data_resampling = %RES

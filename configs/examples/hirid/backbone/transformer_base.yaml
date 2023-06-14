@@ -11,18 +11,17 @@ compute:
 # Specify them exactly as they are specified in the gin config file
 params:
 
-  Transformer.hidden: 42
+  Transformer.hidden: 231
   Transformer.depth: [1, 2, 3]
   Transformer.heads: [1, 2, 3]
   Transformer.dropout: [0.0, 0.1, 0.2]
 
-  DLWrapper.reg: 'l1'
-  DLWrapper.reg_weight: [0.0, 0.0001, 0.001, 0.01, 0.1, 1.0, 10, 20]
+  Adam.lr: [0.0001, 0.0005, 0.001]
 
 
-# Different Random Seeds for each configuration
+# Different Random Seeds (one run per seed will be launched)
 seeds: [1111, 2222, 3333]
 
 base_gin: './configs/examples/hirid/backbone/transformer.gin' # the gin config file to be used as a base
 accelerate_config: './configs/accelerate/accel_config_gpu1.yml' # the accelerate config file to be used
-task: 'decomp_24Hours' # the task to be run
+task: 'Dynamic_CircFailure_12Hours' # the task to be run

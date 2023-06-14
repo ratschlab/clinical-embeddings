@@ -7,7 +7,7 @@ import icu_benchmarks.data.loader
 
 EMB = 231
 LR = 3e-4
-HIDDEN = 64
+HIDDEN = 231
 NUM_CLASSES = 2
 DEPTH = 1
 EMB_DEPTH = 1
@@ -47,6 +47,7 @@ DLWrapper.aux_label_type = %AUX_TYPE
 DLWrapper.aux_label_weight = %AUX_WEIGHT
 DLWrapper.aux_label_horizon = %AUX_HORIZON
 
+ICUVariableLengthLoaderTables.on_RAM = False
 ICUVariableLengthLoaderTables.splits = ['train','test','val']
 ICUVariableLengthLoaderTables.task = %TASK
 ICUVariableLengthLoaderTables.data_resampling = %RES
