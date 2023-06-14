@@ -2,7 +2,7 @@
 
 Repository for the paper: „On the Importance of Step-wise Embeddings for Clinical Sequence Modeling“
 
-![Pipeline Overview](https://github.com/ratschlab/clinical-embeddings/blob/main/pipeline_overview.png?raw=true)
+![Pipeline Overview](https://github.com/ratschlab/clinical-embeddings/blob/main/files/figures/pipeline_overview.png?raw=true)
 
 ## Setup
 
