@@ -22,7 +22,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
     ],
-    description="This project aim is to build a benchmark for ICU related tasks.",
+    description="Package for the paper: On the Importance of Step-wise Embeddings for Clinical Sequence Modeling",
     entry_points={
         "console_scripts": ['icu-benchmarks = icu_benchmarks.run:main']
     },
@@ -36,7 +36,7 @@ setup(
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=[],
-    url='https://github.com/ratschlab/HIRID-ICU-Benchmark',
+    url='https://github.com/ratschlab/clinical-embeddings',
     version='1.0.0',
     zip_safe=False,
 )

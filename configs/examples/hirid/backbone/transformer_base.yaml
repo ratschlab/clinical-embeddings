@@ -1,0 +1,28 @@
+# Specify compute resources
+compute:
+  gpus: 1 # Number of GPUs (should align with the number of GPUs in the accelerate config file)
+  gpu_type: rtx2080ti # Type of GPU
+  cores: 4 # Number of CPU cores, specify the number of workers in the gin config file
+  memory: 4 # Amount of memory in GB per core
+  time: 4 # Time in hours
+
+# Hyperparameters
+# Specify hyperparameters to be tuned and their search space
+# Specify them exactly as they are specified in the gin config file
+params:
+
+  Transformer.hidden: 42
+  Transformer.depth: [1, 2, 3]
+  Transformer.heads: [1, 2, 3]
+  Transformer.dropout: [0.0, 0.1, 0.2]
+
+  DLWrapper.reg: 'l1'
+  DLWrapper.reg_weight: [0.0, 0.0001, 0.001, 0.01, 0.1, 1.0, 10, 20]
+
+
+# Different Random Seeds for each configuration
+seeds: [1111, 2222, 3333]
+
+base_gin: './configs/examples/hirid/backbone/transformer.gin' # the gin config file to be used as a base
+accelerate_config: './configs/accelerate/accel_config_gpu1.yml' # the accelerate config file to be used
+task: 'decomp_24Hours' # the task to be run

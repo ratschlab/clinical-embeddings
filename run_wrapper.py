@@ -50,7 +50,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--config", required=True, type=str,
         help="Configuration yaml file")
     parser.add_argument("--print", default=False, action="store_true")
-    parser.add_argument("--sleep", type=float, default=1.0,
+    parser.add_argument("--sleep", type=float, default=0.0,
         help="Seconds to wait between submissions")
     parser.add_argument("--num_runs", type=int, default=-1,
                         help="Number of runs to perform; default=-1 run all configs")
