@@ -22,6 +22,15 @@ We base our pipeline on the work of Yèche et al. in Temporal Label Smoothing. F
 how to obtain access to the [MIMIC-III](https://physionet.org/content/mimiciii/1.4/) and [HiRID](https://physionet.org/content/hirid/1.1.1/) datasets, as well as how to preprocess them, please
 consult the repository here: [https://github.com/ratschlab/tls](https://github.com/ratschlab/tls).
 
+The `tls` repository with the preprocessing is included as a submodule in this repository. To clone the repository with the submodule, run:
+
+```bash
+git submodule init
+git submodule update
+
+# follow instructions in `tls` repository to download and preprocess the datasets
+```
+
 The resulting `.h5` files in the `ml_stage` working directory of the preprocessing are the designated
 inputs to our pipeline.
 
