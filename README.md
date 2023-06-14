@@ -40,7 +40,7 @@ inputs to our pipeline.
 | ------------- | ------------- |------------- |------------- |
 | HiRID  | Circulatory Failure at 12h Horizon | 2016 timepoints, 1 week | `Dynamic_CircFailure_12Hours` |
 | HiRID  | Respiratory Failure at 12h Horizon | 2016 timepoints, 1 week | `Dynamic_RespFailure_12Hours` |
-| HiRID  | Mortality after 24h | 288 timepoints, 24 hours | `Dynamic_CircFailure_12Hours` |
+| HiRID  | Mortality after 24h | 288 timepoints, 24 hours | `Mortality_At24Hours` |
 | MIMIC-III  | Decompensation in next 24h | full time-series | `decomp_24Hours` |
 | MIMIC-III  | In-Hospital Mortality after 48h | 48 timepoints, 48 hours | `ihm` |
 
