@@ -1,0 +1,43 @@
+compute:
+  gpus: 8
+  gpu_type: rtx2080ti
+  cores: 8
+  memory: 8
+  time: 10
+
+params:
+
+  # Time-Series Backbone
+  Transformer.hidden: 128
+  Transformer.depth: 1
+
+  # Step-Wise Concept Embedding
+  FeatureTokenizer.categorical_embedding: 'linear'
+  FeatureTokenizer_Transformer.token_dim: 64
+  embedding/StackedTransformerBlocks.depth: 2
+  embedding/StackedTransformerBlocks.hidden: 64
+  embedding/StackedTransformerBlocks.heads: [2, 3]
+
+  # Group / Concept aggregation Search Parameters
+  ClusteredSplittedEmbedding.merge: ['attention_cls','sum', 'mean']
+  aggregation/StackedTransformerBlocks.depth: 1
+  aggregation/StackedTransformerBlocks.hidden: 32
+  aggregation/StackedTransformerBlocks.heads: 2
+  
+  # Clustering parameters
+  DLWrapper.cluster_reg: [0.01, 0.001, 0.0001, 0.00001, 0.000001]
+  DLWrapper.clustering_regularizer_type: 'functional_soft'
+
+  ClusteredSplittedEmbedding.num_clusters_k: [3, 5, 7]
+  ClusteredSplittedEmbedding.clusters_init: 'kmeans++'
+  ClusteredSplittedEmbedding.transformer_shared: [True, False]
+  MovingAverageClustering.decay: [0.5, 0.9, 0.99]
+  ClusteredSplittedEmbedding.clustering_approach: ['bias', 'bias_avg_linear', 'bias_sum_linear']
+
+# Different Random Seeds (one run per seed will be launched)
+seeds: [1111, 2222, 3333]
+
+base_gin: './configs/reproduce/embeddings/ftt-prior-group/transformer_ftt_organ_base.gin'
+accelerate_config: './configs/accelerate/accel_config_gpu8.yml' # acclerate config for 8 GPUs
+task: 'Dynamic_CircFailure_12Hours' # Circulatory Failure at 12h horizon
+
