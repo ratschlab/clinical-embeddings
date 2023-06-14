@@ -40,7 +40,7 @@ In the folder: `./files/cat_dicts/` we provide the auxiliary files for the MIMIC
 used in the Feature Tokenizer embedding layer. An example on how to use/pass these is in: `./configs/examples/hirid/embeddings/ftt-prior-group/transformer.gin`.
 
 In the  folder `./files/dataset_stats/` we provide the auxiliary files for the MIMIC-III and HiRID datasets, which provide dataset statistics and most importantly the directory stores the different variable groupings (e.g. Organ System, Variable Type, ...). The priors are stored as lists of lists of variable indeces. An example on how
-to call them by name via the `run_wrapper.py` (see below) in the sweep `.yaml` is provided in `./configs/reproduce/embeddings/ftt-prior-group/transformer_ftt_prior_group.yaml`.
+to call them by name via the `run_wrapper.py` (see below) in the sweep `.yaml` is provided in `./configs/reproduce/embeddings/ftt-prior-group/transformer_ftt_prior_group_circulatory.yaml`.
 
 ## Training
 
@@ -64,7 +64,6 @@ Please note that some of the example use very small model dimension for demonstr
 
 ### Hyperparameter Search
 
-def create_slurm_command(args: argparse.Namespace, compute_config: dict = {}) -> str:
 We use a [Slurm](https://slurm.schedmd.com) based compute cluster and provide a wrapper script (`./run_wrapper.py`) to launch hyperparameter sweeps (for a different compute environment core functions to modify are `create_slurm_command` and `run_on_slurm`). The script takes a configuration file (`.yaml`) as input and launches a hyperparameter sweep based on the specified search space. Individual run directories are created in the designated directory and the runs are submitted to the cluster. The wrapper creates dedicated `.gin` configurations in each run directory, which extend and overwrite the base configuration. The configuration file should specify the following parameters:
 
 ```yaml

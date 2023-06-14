@@ -1,9 +1,9 @@
 compute:
   gpus: 8
   gpu_type: rtx2080ti
-  cores: 16
-  memory: 24
-  time: 8
+  cores: 8
+  memory: 8
+  time: 10
 
 params:
 
@@ -17,7 +17,7 @@ params:
   embedding/StackedTransformerBlocks.hidden: 64
   embedding/StackedTransformerBlocks.heads: [2, 3]
 
-  # Aggregation Search Parameters
+  # Group / Concept aggregation Search Parameters
   Splitted_Embedding.merge: 'attention_cls'
   aggregation/StackedTransformerBlocks.depth: 2
   aggregation/StackedTransformerBlocks.hidden: 64
@@ -31,5 +31,5 @@ seeds: [1111, 2222, 3333]
 
 base_gin: './configs/reproduce/embeddings/ftt-prior-group/transformer_ftt_organ_base.gin'
 accelerate_config: './configs/accelerate/accel_config_gpu8.yml' # acclerate config for 8 GPUs
-task: 'Dynamic_CircFailure_12Hours' # Circulatory Failure at 12h Horizon
+task: 'Dynamic_CircFailure_12Hours' # Circulatory Failure at 12h horizon
 
