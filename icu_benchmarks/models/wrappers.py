@@ -127,9 +127,9 @@ class DLWrapper(object):
         self.cluster_reg = cluster_reg
         self.clustering_regularizer_type = clustering_regularizer_type
         assert self.clustering_regularizer_type in ['functional_hard', 'functional_soft']
-        logging.info(f"[{self.__class__.__name__}] Clustering Regularizer Type: {self.clustering_regularizer_type}")
         if self.cluster_reg > 0:
             logging.warning(f"Clustering Regularization is enabled with weight {self.cluster_reg}")
+            logging.info(f"[{self.__class__.__name__}] Clustering Regularizer Type: {self.clustering_regularizer_type}")
 
     def set_logdir(self, logdir):
         logging.info(f"[{self.__class__.__name__}] set log dir: {logdir}")
@@ -371,8 +371,9 @@ class DLWrapper(object):
                     self.clustering_logger_steps += 1
             
             # Sync Clustering Split from main and update local split on each process
-            accelerate.utils.broadcast(unwrapped_encoder_embedding.clustering_assignments, from_process=0)
-            unwrapped_encoder_embedding.update_clustering_split(unwrapped_encoder_embedding.clustering_assignments)
+            if self.cluster_splitting:
+                accelerate.utils.broadcast(unwrapped_encoder_embedding.clustering_assignments, from_process=0)
+                unwrapped_encoder_embedding.update_clustering_split(unwrapped_encoder_embedding.clustering_assignments)
 
 
             train_loss.append(loss)
