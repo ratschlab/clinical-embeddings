@@ -39,7 +39,7 @@ The core code of the models is located in `icu_benchmarks/models/encoders.py`, `
 
 We use [`.gin` configuration](https://github.com/google/gin-config) files to specify the hyperparameters of the models. The configuration files for the models used in the paper are located in `configs/`.
 
-To run a training run, modify the chosen configuration file to point to the correct input files by setting `train_common.data_path` and `TASK` (HiRID: `Mortality_At24Hours, Dynamic_CircFailure_12Hours, Dynamic_RespFailure_12Hours`, MIMIC: `decomp_24Hours, ihm`) to the desired task to solve for (refer to [https://github.com/ratschlab/tls](https://github.com/ratschlab/tls)). Note that for mortality predictions the time-series should be appropriately cut and the configurations need to be adapted for this taking into account the grid resolution of the respective datasets (5min for HiRID, 1h for MIMIC). For `ihm` on MIMIC set `MAXLEN=48`. For `Mortality_At24Hours` on HiRID set `MAXLEN=288 # 12 * 24`. Then, run:
+To do a training run, modify the chosen configuration file to point to the correct input files by setting `train_common.data_path` and `TASK` (HiRID: `Mortality_At24Hours, Dynamic_CircFailure_12Hours, Dynamic_RespFailure_12Hours`, MIMIC: `decomp_24Hours, ihm`) to the desired task to solve for (refer to [https://github.com/ratschlab/tls](https://github.com/ratschlab/tls)). Note that for mortality predictions the time-series should be appropriately cut and the configurations need to be adapted for this taking into account the grid resolution of the respective datasets (5min for HiRID, 1h for MIMIC). For `ihm` on MIMIC set `MAXLEN=48`. For `Mortality_At24Hours` on HiRID set `MAXLEN=288 # 12 * 24`. Then, run:
 
 ```bash
  accelerate launch \
@@ -51,11 +51,12 @@ To run a training run, modify the chosen configuration file to point to the corr
 
 We use [HuggingFace Accelerate](https://huggingface.co/docs/accelerate/index) for launching (distributed) training runs. The configuration file `accel_config_gpu1.yml` is provided in `configs/accelerate/` and specifies the number of GPUs to use. The `train` command will create a new directory in `logs/` with the name specified by the `-l` argument. The training logs, performance results on validation and test, as well as checkpoints will be saved in this directory. `-c` specifies the path to the configuration file.
 
-Please note that some of the example use very small model dimension for demonstration purposes. To reproduce the results from the paper, please refer to the search space configuration files (`.yaml`) in `configs/`.
+Please note that some of the example use very small model dimension for demonstration purposes. To reproduce the results from the paper, please refer to the search space configuration files (`.yaml`) in `configs/reproduce/*`.
 
 ### Hyperparameter Search
 
-We use a [Slurm](https://slurm.schedmd.com) based compute cluster and provide a wrapper script (`./run_wrapper.py`) to launch hyperparameter sweeps. The script takes a configuration file (`.yaml`) as input and launches a hyperparameter sweep based on the specified search space. Individual run directories are created in the designated directory and the runs are submitted to the cluster. The wrapper creates dedicated `.gin` configurations in each run directory, which extend and overwrite the base configuration. The configuration file should specify the following parameters:
+def create_slurm_command(args: argparse.Namespace, compute_config: dict = {}) -> str:
+We use a [Slurm](https://slurm.schedmd.com) based compute cluster and provide a wrapper script (`./run_wrapper.py`) to launch hyperparameter sweeps (for a different compute environment core functions to modify are `create_slurm_command` and `run_on_slurm`). The script takes a configuration file (`.yaml`) as input and launches a hyperparameter sweep based on the specified search space. Individual run directories are created in the designated directory and the runs are submitted to the cluster. The wrapper creates dedicated `.gin` configurations in each run directory, which extend and overwrite the base configuration. The configuration file should specify the following parameters:
 
 ```yaml
 # Specify compute resources
