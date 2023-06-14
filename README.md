@@ -1,6 +1,6 @@
 # On the Importance of Step-wise Embeddings for Clinical Sequence Modeling
 
-Repository for the Benchmark: „On the Importance of Step-wise Embeddings for Clinical Sequence Modeling“
+A benchmark for state-of-the-art clinical sequence modeling.
 
 ![Pipeline Overview](https://github.com/ratschlab/clinical-embeddings/blob/main/files/figures/pipeline_overview.png?raw=true)
 
