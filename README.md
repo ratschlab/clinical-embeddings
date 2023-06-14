@@ -25,7 +25,7 @@ inputs to our pipeline.
 
 The core code of the models is located in `icu_benchmarks/models/encoders.py`, `icu_benchmarks/models/layers.py`, and  `icu_benchmarks/models/wrappers.py`.
 
-We use `.gin` configuration files to specify the hyperparameters of the models. The configuration files for the models used in the paper are located in `configs/`.
+We use [`.gin` configuration](https://github.com/google/gin-config) files to specify the hyperparameters of the models. The configuration files for the models used in the paper are located in `configs/`.
 
 To run a training run, modify the chosen configuration file to point to the correct input files by setting `train_common.data_path` and `TASK` to the desired task to solve for (refer to [https://github.com/ratschlab/tls](https://github.com/ratschlab/tls)). Then, run:
 
