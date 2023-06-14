@@ -9,17 +9,29 @@ Repository for the Benchmark: „On the Importance of Step-wise Embeddings for C
 We provide a `conda` environment file: `environment.yml`. To create the environment, run:
 
 ```bash
-conda env create -f environment.yml
+conda env create -f environment.yml # create the conda environment
+
+conda activate embeddings # activate the environment
+
+pip install -e . # install the package
 ```
 
 ## Data and Preprocessing 
 
 We base our pipeline on the work of Yèche et al. in Temporal Label Smoothing. For instructions on
-how to obtain access to the MIMIC-III and HiRID datasets, as well as how to preprocess them, please
+how to obtain access to the [MIMIC-III](https://physionet.org/content/mimiciii/1.4/) and [HiRID](https://physionet.org/content/hirid/1.1.1/) datasets, as well as how to preprocess them, please
 consult the repository here: [https://github.com/ratschlab/tls](https://github.com/ratschlab/tls).
 
 The resulting `.h5` files in the `ml_stage` working directory of the preprocessing are the designated
 inputs to our pipeline.
+
+### Auxiliary Files
+
+In the folder: `./files/cat_dicts/` we provide the auxiliary files for the MIMIC-III and HiRID datasets, which are used to map the categorical variables to their respective indices. They are
+used in the Feature Tokenizer embedding layer. An example on how to use/pass these is in: `./configs/examples/hirid/embeddings/ftt-prior-group/transformer.gin`.
+
+In the  folder `./files/dataset_stats/` we provide the auxiliary files for the MIMIC-III and HiRID datasets, which provide dataset statistics and most importantly the directory stores the different variable groupings (e.g. Organ System, Variable Type, ...). The priors are stored as lists of lists of variable indeces. An example on how
+to call them by name via the `run_wrapper.py` (see below) in the sweep `.yaml` is provided in `./configs/reproduce/embeddings/ftt-prior-group/transformer_ftt_prior_group.yaml`.
 
 ## Training
 
@@ -27,7 +39,7 @@ The core code of the models is located in `icu_benchmarks/models/encoders.py`, `
 
 We use [`.gin` configuration](https://github.com/google/gin-config) files to specify the hyperparameters of the models. The configuration files for the models used in the paper are located in `configs/`.
 
-To run a training run, modify the chosen configuration file to point to the correct input files by setting `train_common.data_path` and `TASK` (HiRID: `Mortality_At24Hours, Dynamic_CircFailure_12Hours, Dynamic_RespFailure_12Hours`, MIMIC: `decomp_24Hours, ihm`) to the desired task to solve for (refer to [https://github.com/ratschlab/tls](https://github.com/ratschlab/tls)). Then, run:
+To run a training run, modify the chosen configuration file to point to the correct input files by setting `train_common.data_path` and `TASK` (HiRID: `Mortality_At24Hours, Dynamic_CircFailure_12Hours, Dynamic_RespFailure_12Hours`, MIMIC: `decomp_24Hours, ihm`) to the desired task to solve for (refer to [https://github.com/ratschlab/tls](https://github.com/ratschlab/tls)). Note that for mortality predictions the time-series should be appropriately cut and the configurations need to be adapted for this taking into account the grid resolution of the respective datasets (5min for HiRID, 1h for MIMIC). For `ihm` on MIMIC set `MAXLEN=48`. For `Mortality_At24Hours` on HiRID set `MAXLEN=288 # 12 * 24`. Then, run:
 
 ```bash
  accelerate launch \
@@ -43,7 +55,7 @@ Please note that some of the example use very small model dimension for demonstr
 
 ### Hyperparameter Search
 
-We use a [Slurm](https://slurm.schedmd.com) based compute cluster and provide a wrapper script (`./run_wrapper.py`) to launch hyperparameter sweeps. The script takes a configuration file (`.yaml`) as input and launches a hyperparameter sweep based on the specified search space. Individual run directories are created in the designated directory and the runs are submitted to the cluster. The configuration file should specify the following parameters:
+We use a [Slurm](https://slurm.schedmd.com) based compute cluster and provide a wrapper script (`./run_wrapper.py`) to launch hyperparameter sweeps. The script takes a configuration file (`.yaml`) as input and launches a hyperparameter sweep based on the specified search space. Individual run directories are created in the designated directory and the runs are submitted to the cluster. The wrapper creates dedicated `.gin` configurations in each run directory, which extend and overwrite the base configuration. The configuration file should specify the following parameters:
 
 ```yaml
 # Specify compute resources
@@ -59,21 +71,25 @@ compute:
 # Specify them exactly as they are specified in the gin config file
 params:
 
-  Transformer.hidden: 42
+  # Some examples, keys should be exactly as if provided via gin configurations
+  # they will be copied into the gin config file
+  # If a single value is provided the value will be added as is to the gin configuration file
+  # If a list is provided, it will be considered a search parameter and the corresponding
+  # configurations are created by the run_wrapper.py script
+  Transformer.hidden: 231
   Transformer.depth: [1, 2, 3]
   Transformer.heads: [1, 2, 3]
   Transformer.dropout: [0.0, 0.1, 0.2]
 
-  DLWrapper.reg: 'l1'
-  DLWrapper.reg_weight: [0.0, 0.0001, 0.001, 0.01, 0.1, 1.0, 10, 20]
+  Adam.lr: [0.0001, 0.0005, 0.001]
 
 
-# Different Random Seeds for each configuration
+# Different Random Seeds (one run per seed will be launched)
 seeds: [1111, 2222, 3333]
 
 base_gin: './configs/examples/hirid/backbone/transformer.gin' # the gin config file to be used as a base
 accelerate_config: './configs/accelerate/accel_config_gpu1.yml' # the accelerate config file to be used
-task: 'decomp_24Hours' # the task to be run
+task: 'Dynamic_CircFailure_12Hours' # the task to be run
 ```
 
 To launch a hyperparameter sweep, run:
@@ -86,3 +102,9 @@ python run_wrapper.py \
     --directory ./logs # Directory to save the sweep in
     --name example-sweep # Name of the sweep (corresponds to folder name) inside provided directory
 ```
+
+### Reproduction
+
+We provide a set of configurations in `./configs/reproduce` in the form of `.yaml` sweep config files and their associated `.gin` base config files.
+
+

@@ -235,7 +235,7 @@ def config_to_cmd_str(config: dict, args: argparse.Namespace, split_seeds: bool 
             # logging.info(f"[DISTRIBUTED] master port: {random_port}")
 
         # add python run script
-        run_cmd += "/cluster/home/burgerm/projects/TS-Embeddings/icu_benchmarks/run.py train "
+        run_cmd += "./icu_benchmarks/run.py train "
 
         run_cmd += f"-c {gin_config_path} "
         run_cmd += f"-l {run_directory} "
