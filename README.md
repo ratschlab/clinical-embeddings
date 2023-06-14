@@ -82,6 +82,7 @@ To launch a hyperparameter sweep, run:
 python run_wrapper.py \
     --config ./configs/examples/hirid/backbone/transformer_base.yaml \ # Base config file
     --shuffle \ # Shuffle the hyperparameter combinations, together with `num_runs` this creates a random search
-     --num_runs 20 \ # Maximun number of different configurations to be run, if not set, all possible combinations are run
-    --name example-sweep
+    --num_runs 20 \ # Maximun number of different configurations to be run, if not set, all possible combinations are run
+    --directory ./logs # Directory to save the sweep in
+    --name example-sweep # Name of the sweep (corresponds to folder name) inside provided directory
 ```

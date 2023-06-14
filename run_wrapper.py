@@ -45,7 +45,7 @@ def parse_arguments() -> argparse.Namespace:
     # ------------------
     parser.add_argument("-n", "--name", type=str, default="test",
         help="Experiment Name")
-    parser.add_argument("-d", "--directory", type=str, default="/cluster/work/grlab/projects/projects2022-ts-embeddings/clustering")
+    parser.add_argument("-d", "--directory", type=str, default="./logs")
     parser.add_argument("--clear_directory", default=False, action="store_true")
     parser.add_argument("--config", required=True, type=str,
         help="Configuration yaml file")
