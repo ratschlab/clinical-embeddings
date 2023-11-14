@@ -1,0 +1,68 @@
+import gin.torch.external_configurables
+import icu_benchmarks.models.wrappers
+import icu_benchmarks.models.encoders
+import icu_benchmarks.models.utils
+import icu_benchmarks.data.loader
+
+
+EMB = 231
+LR = 3e-4
+HIDDEN = 231
+NUM_CLASSES = 2
+DEPTH = 1
+EMB_DEPTH = 1
+BS = 64
+EPOCHS = 1000
+TASK = 'Dynamic_CircFailure_12Hours' # Mortality_At24Hours, Dynamic_CircFailure_12Hours, Dynamic_RespFailure_12Hours
+RES = 1
+RES_LAB = 1
+MAXLEN = 2016
+LOSS_WEIGHT = None
+REG_WEIGHT = 0.0
+REG_TYPE = None
+AUX_IDX = None
+NUM_AUX = 0
+AUX_WEIGHT = 1.0
+AUX_TYPE = 'max'
+AUX_HORIZON = 144
+
+# Train params
+train_common.model = @DLWrapper()
+train_common.dataset_fn = @ICUVariableLengthDataset
+train_common.data_path = '.../ml_stage_12h.h5'
+train_common.weight = %LOSS_WEIGHT
+train_common.do_test = True
+
+
+DLWrapper.encoder = @GRU()
+DLWrapper.optimizer_fn = @Adam
+DLWrapper.train.epochs = %EPOCHS
+DLWrapper.train.batch_size = %BS
+DLWrapper.train.patience = 10
+DLWrapper.train.min_delta = 1e-4
+DLWrapper.reg = %REG_TYPE
+DLWrapper.reg_weight = %REG_WEIGHT
+DLWrapper.aux_label_idx = %AUX_IDX
+DLWrapper.aux_label_type = %AUX_TYPE
+DLWrapper.aux_label_weight = %AUX_WEIGHT
+DLWrapper.aux_label_horizon = %AUX_HORIZON
+
+ICUVariableLengthLoaderTables.on_RAM = False
+ICUVariableLengthLoaderTables.splits = ['train','test','val']
+ICUVariableLengthLoaderTables.task = %TASK
+ICUVariableLengthLoaderTables.data_resampling = %RES
+ICUVariableLengthLoaderTables.label_resampling = %RES_LAB
+ICUVariableLengthDataset.maxlen = %MAXLEN
+
+# Optimizer params
+Adam.lr = %LR
+Adam.weight_decay = 1e-6
+
+# Encoder params
+GRU.input_dim = %EMB
+GRU.hidden_dim = %HIDDEN
+GRU.layer_dim = %DEPTH
+GRU.num_classes = %NUM_CLASSES
+GRU.embedding_layer = @Identity
+GRU.nb_auxiliary_regression = %NUM_AUX
+MLP.depth = %EMB_DEPTH

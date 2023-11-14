@@ -1,0 +1,78 @@
+import gin.torch.external_configurables
+import icu_benchmarks.models.wrappers
+import icu_benchmarks.models.encoders
+import icu_benchmarks.models.utils
+import icu_benchmarks.data.loader
+
+
+EMB = 231
+HIDDEN = 128
+HEADS = 2
+LATENT = 2
+NUM_CLASSES = 2
+DEPTH = 2
+DO = 0.1
+DO_ATT = 0.1
+
+LR = 3e-4
+BS = 16 # 16
+EPOCHS = 1000
+TASK = 'Mortality_At24Hours' # Mortality_At24Hours, Dynamic_CircFailure_12Hours, Dynamic_RespFailure_12Hours
+
+EMB_LATENT = 64
+EMB_DEPTH = 4
+
+RES = 1
+RES_LAB = 1
+MAXLEN = 288 # 12 (time points per hour on 5min grid) * 24 hours
+LOSS_WEIGHT = None
+REG_WEIGHT = 1.0
+REG_TYPE = 'l1'
+
+# Train params
+train_common.model = @DLWrapper()
+train_common.dataset_fn = @ICUVariableLengthDataset
+train_common.data_path = '.../ml_stage/ml_stage_12h.h5'
+train_common.weight = %LOSS_WEIGHT
+train_common.do_test = True
+
+
+DLWrapper.encoder = @Transformer()
+DLWrapper.optimizer_fn = @Adam
+DLWrapper.train.epochs = %EPOCHS
+DLWrapper.train.batch_size = %BS
+DLWrapper.train.patience = 10
+DLWrapper.train.min_delta = 1e-4
+DLWrapper.reg = %REG_TYPE
+DLWrapper.reg_weight = %REG_WEIGHT
+
+ICUVariableLengthLoaderTables.on_RAM = False
+ICUVariableLengthLoaderTables.splits = ['train','test','val']
+ICUVariableLengthLoaderTables.task = %TASK
+ICUVariableLengthLoaderTables.data_resampling = %RES
+ICUVariableLengthLoaderTables.label_resampling = %RES_LAB
+ICUVariableLengthDataset.maxlen = %MAXLEN
+
+# Optimizer params
+Adam.lr = %LR
+Adam.weight_decay = 1e-6
+
+# -----------------------------------
+# Time-Series Backbone Model
+# -----------------------------------
+# Encoder params
+Transformer.emb = %EMB
+Transformer.hidden = %HIDDEN
+Transformer.heads = %HEADS
+Transformer.ff_hidden_mult = %LATENT
+Transformer.depth = %DEPTH
+Transformer.num_classes = %NUM_CLASSES
+Transformer.dropout = %DO
+Transformer.dropout_att = %DO_ATT
+Transformer.embedding_layer = @ResNet
+
+# -----------------------------------
+# Feature Interaction Model
+# -----------------------------------
+ResNet.depth = %EMB_DEPTH
+ResNet.latent_dim = %EMB_LATENT

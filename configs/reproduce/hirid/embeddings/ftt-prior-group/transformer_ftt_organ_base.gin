@@ -1,0 +1,120 @@
+import gin.torch.external_configurables
+import icu_benchmarks.models.wrappers
+import icu_benchmarks.models.encoders
+import icu_benchmarks.models.utils
+import icu_benchmarks.data.loader
+
+
+EMB = 231
+HIDDEN = 128
+HEADS = 2
+LATENT = 2
+NUM_CLASSES = 2
+DEPTH = 2
+DO = 0.1
+DO_ATT = 0.1
+
+LR = 3e-4
+BS = 16 # 16
+EPOCHS = 1000
+TASK = 'Dynamic_CircFailure_12Hours' # Circulatory Failure 12h Horizon
+
+# Feature grouping indeces (./files/dataset_stats/all_modsplits.pkl) for organ-based splitting
+MODALITY_SPLITTING = [[21, 25, 27, 28, 35, 37, 59, 60, 61, 64, 69, 81, 82, 84, 94, 99, 102, 104, 105, 108, 116, 118, 121, 123, 124, 151, 214], [1, 2, 3, 4, 7, 11, 22, 24, 30, 31, 32, 33, 41, 42, 49, 52, 65, 70, 74, 75, 93, 95, 96, 97, 106, 110, 111, 112, 113, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 154, 157, 158, 159, 161, 178, 197, 198, 199, 201, 202, 203, 208, 210, 212, 215, 218, 223, 229, 230], [23, 26, 53, 55, 56, 57, 58, 63, 67, 68, 71, 76, 77, 83, 86, 87, 88, 89, 90, 98, 109, 114, 122, 156, 176, 177, 180, 181, 182, 184, 185, 186, 194, 204, 206, 217, 224, 228], [12, 13, 29, 34, 40, 46, 48, 51, 62, 72, 73, 103, 144, 147, 148, 191, 209, 211, 219, 221], [5, 8, 39, 195, 196, 205], [6, 9, 14, 15, 16, 17, 18, 19, 36, 50, 54, 117, 120, 125, 126, 145, 146, 153, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 179, 187, 188, 189, 213, 222], [10, 20, 38, 43, 44, 45, 47, 66, 78, 79, 80, 85, 91, 92, 100, 101, 107, 115, 119, 155, 160, 162, 183, 190, 200, 216, 225, 226, 227], [0, 192, 193, 207, 220]]
+
+# Embedding parameters
+EMB_MERGE = 'attention_cls'
+EMB_LATENT = 64
+EMB_DEPTH = 2
+SELF_ATTENTION_DIM_EMB=64
+HEADS_EMB=2
+MULT_EMB=2
+
+RES = 1
+RES_LAB = 1
+MAXLEN = 2016 # we cut the time-series at one week (HiRID Benchmark, Yèche et al.)
+LOSS_WEIGHT = None
+
+# disable embedding regularization
+REG_WEIGHT = 0.0
+REG_TYPE = None # 'l1'
+
+# Train params
+train_common.model = @DLWrapper()
+train_common.dataset_fn = @ICUVariableLengthDataset
+train_common.data_path = '.../ml_stage/ml_stage_12h.h5'
+train_common.weight = %LOSS_WEIGHT
+train_common.do_test = True
+
+
+DLWrapper.encoder = @Transformer()
+DLWrapper.optimizer_fn = @Adam
+DLWrapper.train.epochs = %EPOCHS
+DLWrapper.train.batch_size = %BS
+DLWrapper.train.patience = 10
+DLWrapper.train.min_delta = 1e-4
+DLWrapper.reg = %REG_TYPE
+DLWrapper.reg_weight = %REG_WEIGHT
+
+ICUVariableLengthLoaderTables.on_RAM = False
+ICUVariableLengthLoaderTables.splits = ['train','test','val']
+ICUVariableLengthLoaderTables.task = %TASK
+ICUVariableLengthLoaderTables.data_resampling = %RES
+ICUVariableLengthLoaderTables.label_resampling = %RES_LAB
+ICUVariableLengthDataset.maxlen = %MAXLEN
+
+
+# Optimizer params
+Adam.lr = %LR
+Adam.weight_decay = 1e-6
+
+# -----------------------------------
+# Time-Series Model
+# -----------------------------------
+# Encoder params
+Transformer.emb = %EMB
+Transformer.hidden = %HIDDEN
+Transformer.heads = %HEADS
+Transformer.ff_hidden_mult = %LATENT
+Transformer.depth = %DEPTH
+Transformer.num_classes = %NUM_CLASSES
+Transformer.dropout = %DO
+Transformer.dropout_att = %DO_ATT
+Transformer.embedding_layer = @Splitted_Embedding
+
+# -----------------------------------
+# Feature Interaction Model
+# -----------------------------------
+Splitted_Embedding.embedding_model = @FeatureTokenizer_Transformer
+Splitted_Embedding.reindex_modalities = %MODALITY_SPLITTING
+Splitted_Embedding.merge = %EMB_MERGE
+Splitted_Embedding.path_to_cat_dict = 'files/cat_dicts/cat_dict_hirid.pkl'
+
+FeatureTokenizer_Transformer.token_dim = %EMB_LATENT
+FeatureTokenizer_Transformer.transformer = @embedding/StackedTransformerBlocks
+embedding/StackedTransformerBlocks.depth = %EMB_DEPTH
+embedding/StackedTransformerBlocks.hidden = %SELF_ATTENTION_DIM_EMB
+embedding/StackedTransformerBlocks.heads = %HEADS_EMB
+embedding/StackedTransformerBlocks.ff_hidden_mult = %MULT_EMB
+
+# -----------------------------------
+# Merge All Groups
+# -----------------------------------
+#if merge='attention_cls':
+SELF_ATTENTION_DIM_AGG=64
+HEADS_AGG=2
+MULT_AGG=2
+MASK_AGG = False
+DO_AGG=0.0
+DO_ATT_AGG=0.0
+DEPTH_AGG=2
+
+#Attention aggregation params in Embedding Block
+Splitted_Embedding.agg_feature_mode = @aggregation/StackedTransformerBlocks 
+aggregation/StackedTransformerBlocks.hidden = %SELF_ATTENTION_DIM_AGG
+aggregation/StackedTransformerBlocks.heads = %HEADS_AGG
+aggregation/StackedTransformerBlocks.ff_hidden_mult = %MULT_AGG
+aggregation/StackedTransformerBlocks.mask = %MASK_AGG
+aggregation/StackedTransformerBlocks.dropout = %DO_AGG
+aggregation/StackedTransformerBlocks.dropout_att = %DO_ATT_AGG
+aggregation/StackedTransformerBlocks.depth = %DEPTH_AGG

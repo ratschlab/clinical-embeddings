@@ -1,0 +1,36 @@
+compute:
+  gpus: 8
+  gpu_type: rtx2080ti
+  cores: 8
+  memory: 8
+  time: 10
+
+params:
+
+  # Time-Series Backbone
+  Transformer.hidden: 128
+  Transformer.depth: 1
+
+  # Step-Wise Concept Embedding
+  FeatureTokenizer_Transformer.token_dim: 64
+  embedding/StackedTransformerBlocks.depth: 2
+  embedding/StackedTransformerBlocks.hidden: 64
+  embedding/StackedTransformerBlocks.heads: [2, 3]
+
+  # Group / Concept aggregation Search Parameters
+  Splitted_Embedding.merge: 'attention_cls'
+  aggregation/StackedTransformerBlocks.depth: 2
+  aggregation/StackedTransformerBlocks.hidden: 64
+  aggregation/StackedTransformerBlocks.heads: [2, 3]
+
+  # Prior Group Assignments: ./files/dataset_stats/all_modsplits.pkl
+  mod_split: ['hirid_categorical', 'hirid_organ',  'hirid_type', 'hirid_time', 'hirid_nosplit']
+
+# Different Random Seeds (one run per seed will be launched)
+seeds: [1111, 2222, 3333]
+
+base_gin: './configs/reproduce/embeddings/ftt-prior-group/transformer_ftt_organ_base.gin'
+accelerate_config: './configs/accelerate/accel_config_gpu8.yml' # acclerate config for 8 GPUs
+task: 'Dynamic_RespFailure_12Hours' # Respiratory Failure at 12h horizon
+```
+
