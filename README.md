@@ -1,5 +1,7 @@
 # On the Importance of Step-wise Embeddings for Heterogeneous Clinical Time-Series
 
+Paper: https://proceedings.mlr.press/v225/kuznetsova23a.html
+
 ![Pipeline Overview](./files/figures/pipeline_overview.png)
 
 ## Setup
@@ -127,4 +129,21 @@ python run_wrapper.py \
 
 We provide a set of configurations in `./configs/reproduce` in the form of `.yaml` sweep config files and their associated `.gin` base config files.
 
+## Citation
 
+```bibtex
+@InProceedings{pmlr-v225-kuznetsova23a,
+  title = 	 {On the Importance of Step-wise Embeddings for Heterogeneous Clinical Time-Series},
+  author =       {Kuznetsova, Rita and Pace, Aliz\'ee and Burger, Manuel and Y\`eche, Hugo and R\"atsch, Gunnar},
+  booktitle = 	 {Proceedings of the 3rd Machine Learning for Health Symposium},
+  pages = 	 {268--291},
+  year = 	 {2023},
+  editor = 	 {Hegselmann, Stefan and Parziale, Antonio and Shanmugam, Divya and Tang, Shengpu and Asiedu, Mercy Nyamewaa and Chang, Serina and Hartvigsen, Tom and Singh, Harvineet},
+  volume = 	 {225},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {10 Dec},
+  publisher =    {PMLR},
+  pdf = 	 {https://proceedings.mlr.press/v225/kuznetsova23a/kuznetsova23a.pdf},
+  url = 	 {https://proceedings.mlr.press/v225/kuznetsova23a.html}
+}
+```
